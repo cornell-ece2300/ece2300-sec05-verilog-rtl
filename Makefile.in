@@ -1,0 +1,178 @@
+#=========================================================================
+# Makefile for ECE 2300
+#=========================================================================
+# Author : Christopher Batten (Cornell)
+# Date   : September 7, 2024
+
+hws = \
+  FullSubtractor_GL.v \
+  SubtractorRippleCarry_4b_GL.v \
+	Mux2_1b_GL.v \
+	Mux2_4b_GL.v \
+	GTComparator_1b_GL.v \
+	GTComparator_4b_GL.v \
+	AbsDiff_4b_GL.v \
+	GTComparator_4b_RTL.v \
+  Subtractor_4b_RTL.v \
+  Mux2_4b_RTL.v \
+	AbsDiff_4b_RTL.v \
+
+tests = \
+  FullSubtractor_GL-test.v \
+  SubtractorRippleCarry_4b_GL-test.v \
+	Mux2_1b_GL-test.v \
+	Mux2_4b_GL-test.v \
+	GTComparator_1b_GL-test.v \
+	GTComparator_4b_GL-test.v \
+	AbsDiff_4b_GL-test.v \
+	GTComparator_4b_RTL-test.v \
+  Subtractor_4b_RTL-test.v \
+  Mux2_4b_RTL-test.v \
+	AbsDiff_4b_RTL-test.v \
+
+sims = \
+  mux-rtl-sim.v \
+
+#-------------------------------------------------------------------------
+# Basic setup
+#-------------------------------------------------------------------------
+
+# Remove all default implicit rules since they can cause subtle bugs
+# and they just make things run slower
+.SUFFIXES:
+% : %,v
+% : RCS/%,v
+% : RCS/%
+% : s.%
+% : SCCS/s.%
+
+# Default is to build the prereqs of the all target (defined at bottom)
+default : all
+.PHONY : default
+
+#-------------------------------------------------------------------------
+# Directories
+#-------------------------------------------------------------------------
+
+top_dir     := @srcdir@
+scripts_dir := $(top_dir)/scripts
+hw_dir      := $(top_dir)/hw
+test_dir    := $(top_dir)/test
+sim_dir     := $(top_dir)/sim
+
+VPATH := $(hw_dir) $(test_dir) $(sim_dir)
+
+#-------------------------------------------------------------------------
+# Programs
+#-------------------------------------------------------------------------
+
+VMKDEPS          := $(scripts_dir)/mk-verilog-deps
+WARN2ERR         := $(scripts_dir)/warnings2errors
+
+VERILATOR_FLAGS  := --quiet --timing -Wall -Wno-DECLFILENAME
+VERILATOR_LINT   := @VERILATOR@ --lint-only $(VERILATOR_FLAGS)
+
+IVERILOG_FLAGS   := -Wall -Winfloop -Wno-timescale -g2012
+IVERILOG_COMPILE := $(WARN2ERR) @IVERILOG@ $(IVERILOG_FLAGS)
+
+#-------------------------------------------------------------------------
+# Tests
+#-------------------------------------------------------------------------
+
+test_deps := $(patsubst %.v, %.d,   $(tests))
+test_exes := $(patsubst %.v, %,     $(tests))
+test_logs := $(patsubst %.v, %.log, $(tests))
+
+$(test_deps) : %.d : %.v
+	$(VMKDEPS) -I $(hw_dir) -I $(test_dir) $* $<
+
+$(test_exes) : % : %.v
+	$(VERILATOR_LINT) -I$(hw_dir) -I$(test_dir) --top-module Top $<
+	$(IVERILOG_COMPILE) -I $(hw_dir) -I $(test_dir) -s Top -o $@ $<
+
+$(test_logs) : %.log : %
+	./$< > $@
+
+check : $(test_logs)
+	@sed -e '/^$$/N;/\n.*finish/d' $(test_logs) | tee test-summary.txt
+	@echo ""
+
+deps += $(test_deps)
+exes += $(test_exes)
+logs += $(test_logs)
+junk += $(test_deps) $(test_exes) $(test_logs)
+
+#-------------------------------------------------------------------------
+# Sims
+#-------------------------------------------------------------------------
+
+sim_deps := $(patsubst %.v, %.d, $(sims))
+sim_exes := $(patsubst %.v, %,   $(sims))
+
+$(sim_deps) : %.d : %.v
+	$(VMKDEPS) -I $(hw_dir) -I $(sim_dir) $* $<
+
+$(sim_exes) : % : %.v
+	$(VERILATOR_LINT) -I$(hw_dir) -I$(sim_dir) --top-module Top $<
+	$(IVERILOG_COMPILE) -I $(hw_dir) -I $(sim_dir) -s Top -o $@ $<
+
+deps += $(sim_deps)
+exes += $(sim_exes)
+junk += $(sim_deps) $(sim_exes)
+
+#-------------------------------------------------------------------------
+# Autodependency files
+#-------------------------------------------------------------------------
+
+-include $(deps)
+
+deps : $(deps)
+.PHONY : deps
+
+#-------------------------------------------------------------------------
+# configure information
+#-------------------------------------------------------------------------
+
+configure_prereq = $(top_dir)/configure.ac
+
+$(top_dir)/configure : $(configure_prereq)
+	cd $(top_dir) && autoconf
+
+config.status : $(top_dir)/configure
+	./config.status --recheck
+
+Makefile : $(top_dir)/Makefile.in config.status
+	./config.status
+
+dist_junk += config.status Makefile config.log
+
+#-------------------------------------------------------------------------
+# Default
+#-------------------------------------------------------------------------
+
+all : $(sim_exes)
+
+.PHONY : all
+
+#-------------------------------------------------------------------------
+# Makefile debugging
+#-------------------------------------------------------------------------
+# This handy rule will display the contents of any make variable by
+# using the target debug-<varname>. So for example, make debug-junk will
+# display the contents of the junk variable.
+
+debug-% :
+	@echo $* = $($*)
+
+#-------------------------------------------------------------------------
+# Clean up junk
+#-------------------------------------------------------------------------
+
+clean :
+	rm -rf *~ \#* *.vcd $(junk)
+
+distclean :
+	rm -rf *~ \#* *.vcd $(junk) $(dist_junk)
+
+.PHONY : clean distclean
+
