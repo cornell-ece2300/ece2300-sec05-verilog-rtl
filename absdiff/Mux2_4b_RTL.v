@@ -22,7 +22,7 @@ module Mux2_4b_RTL
   `ECE2300_UNUSED( in0 );
   `ECE2300_UNUSED( in1 );
   `ECE2300_UNUSED( sel );
-  `ECE2300_UNDRIVEN( out );
+  `ECE2300_FLOATING( out );
 
 endmodule
 

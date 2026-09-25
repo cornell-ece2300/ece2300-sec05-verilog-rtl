@@ -20,7 +20,7 @@ module GTComparator_4b_RTL
 
   `ECE2300_UNUSED( in0 );
   `ECE2300_UNUSED( in1 );
-  `ECE2300_UNDRIVEN( gt );
+  `ECE2300_FLOATING( gt );
 
 endmodule
 

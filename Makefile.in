@@ -22,17 +22,17 @@ default : all
 .PHONY : default
 
 #-------------------------------------------------------------------------
-# Subprojects
-#-------------------------------------------------------------------------
-
-subprojects := ece2300 absdiff
-
-#-------------------------------------------------------------------------
 # Directories
 #-------------------------------------------------------------------------
 
 top_dir     := @srcdir@
 scripts_dir := $(top_dir)/scripts
+
+#-------------------------------------------------------------------------
+# Subprojects
+#-------------------------------------------------------------------------
+
+include $(top_dir)/sprojs.mk
 
 #-------------------------------------------------------------------------
 # Programs
@@ -41,12 +41,16 @@ scripts_dir := $(top_dir)/scripts
 VMKDEPS          := $(scripts_dir)/mk-verilog-deps
 WARN2ERR         := $(scripts_dir)/warnings2errors
 SUMMARIZE_TESTS  := $(scripts_dir)/summarize-tests
+ECE2300_FORMAT   := $(scripts_dir)/ece2300-format
 
 VERILATOR_FLAGS  := --quiet --timing -Wall \
                       -Wno-DECLFILENAME -Wno-UNOPTFLAT -Wno-VARHIDDEN
 VERILATOR_LINT   := @VERILATOR@ --lint-only $(VERILATOR_FLAGS)
 
-ECE2300_LINT     := $(scripts_dir)/ece2300-lint
+ECE2300_LINT          := $(scripts_dir)/ece2300-lint
+ECE2300_LINT_RULESETS := $(scripts_dir)/lint/rulesets.yaml
+
+TINYRV1_ASSEMBLE := $(scripts_dir)/tinyrv1-assemble
 
 IVERILOG_FLAGS   := -Wall -Winfloop -Wno-timescale -g2012
 IVERILOG_COMPILE := $(WARN2ERR) @IVERILOG@ $(IVERILOG_FLAGS)
@@ -56,6 +60,9 @@ IVERILOG_COMPILE := $(WARN2ERR) @IVERILOG@ $(IVERILOG_FLAGS)
 #-------------------------------------------------------------------------
 
 define check_part
+
+# tests
+
 $(1)_test_logs = $$(patsubst %.v, %.log, $$($(1)_tests))
 
 check-$(subst _,-,$(1)) : $$($(1)_test_logs)
@@ -65,6 +72,14 @@ check-$(subst _,-,$(1))-verbose : $$($(1)_test_logs)
 	$(scripts_dir)/summarize-tests --verbose $(SUMMARIZE_TESTS_FLAGS) $$($(1)_test_logs)
 
 .PHONY : check-$(subst _,-,$(1))
+
+# format
+
+$(1)_format_logs = $$(patsubst %.v, %.format-log, $$($(1)_srcs))
+
+format-$(subst _,-,$(1)) : $$($(1)_format_logs)
+
+.PHONY : format-$(subst _,-,$(1))
 
 endef
 
@@ -77,10 +92,12 @@ include $(foreach s,$(subprojects),$(top_dir)/$(s)/$(s).mk)
 srcs  := $(foreach s,$(subprojects),$($(s)_srcs))
 tests := $(foreach s,$(subprojects),$($(s)_tests))
 sims  := $(foreach s,$(subprojects),$($(s)_sims))
+asms  := $(foreach s,$(subprojects),$($(s)_asms))
 
 VPATH := $(foreach s,$(subprojects),$(top_dir)/$(s))
 VPATH += $(foreach s,$(subprojects),$(top_dir)/$(s)/test)
 VPATH += $(foreach s,$(subprojects),$(top_dir)/$(s)/sim)
+VPATH += $(foreach s,$(subprojects),$(top_dir)/$(s)/asm)
 
 #-------------------------------------------------------------------------
 # Tests
@@ -93,10 +110,9 @@ test_logs := $(patsubst %.v, %.log, $(tests))
 $(test_deps) : %.d : %.v
 	$(VMKDEPS) -I $(top_dir) $* $<
 
-#	$(ECE2300_LINT) -I $(top_dir) $<
-
-$(test_exes) : % : %.v
+$(test_exes) : % : %.v $(ECE2300_LINT_RULESETS)
 	$(VERILATOR_LINT) -I$(top_dir) --top-module Top $<
+	$(ECE2300_LINT) --rulesets $(ECE2300_LINT_RULESETS) -I $(top_dir) $<
 	$(IVERILOG_COMPILE) -I $(top_dir) -s Top -o $@ $<
 
 $(test_logs) : %.log : %
@@ -132,6 +148,30 @@ $(sim_exes) : % : %.v
 deps += $(sim_deps)
 exes += $(sim_exes)
 junk += $(sim_deps) $(sim_exes)
+
+#-------------------------------------------------------------------------
+# Asms
+#-------------------------------------------------------------------------
+
+asm_bins := $(patsubst %.asm, %.bin, $(asms))
+
+$(asm_bins) : %.bin : %.asm
+	$(TINYRV1_ASSEMBLE) -o $@ $<
+
+#-------------------------------------------------------------------------
+# Autoformat
+#-------------------------------------------------------------------------
+
+format_logs := $(patsubst %.v, %.format-log, $(srcs))
+
+$(format_logs) : %.format-log : %.v
+	$(ECE2300_FORMAT) $< | tee $@
+
+format : $(format_logs)
+
+.PHONY : format
+
+junk += $(format_logs)
 
 #-------------------------------------------------------------------------
 # Autodependency files
@@ -189,4 +229,3 @@ distclean :
 	rm -rf *~ \#* *.vcd $(junk) $(dist_junk)
 
 .PHONY : clean distclean
-

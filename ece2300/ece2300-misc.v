@@ -47,7 +47,7 @@
 `endif
 
 //------------------------------------------------------------------------
-// ECE2300_UNDRIVEN
+// ECE2300_FLOATING
 //------------------------------------------------------------------------
 // We use the $bits system task to get the bitwidth of the signal so we
 // can use the repeat operator to create a literal with all Zs. Unlike
@@ -57,32 +57,8 @@
 // does not have a trailing semicolon. The semicolon after the actual
 // macro call will turn into the semicolon at the end of the assign.
 
-`define ECE2300_UNDRIVEN( signal_ ) \
+`define ECE2300_FLOATING( signal_ ) \
   assign signal_ = {$bits(signal_){1'bz}}
-
-//------------------------------------------------------------------------
-// ECE2300_XPROP
-//------------------------------------------------------------------------
-// Expression should indicate when we want the given signal to be forced
-// to be all Xs. The expression will likely make use of $isunknown().
-// Here are some examples:
-//
-//  `ECE2300_XPROP( out, $isunknown(sel) );
-//  `ECE2300_XPROP( out, bar && $isunknown(foo) );
-//
-// It is fine to use the macro multiple times in the same always block in
-// which case the given signal will be forced to Xs if at least one of
-// the expressions is true.
-
-`ifndef ALTERA_RESERVED_QIS
-`define ECE2300_XPROP( signal_, expr_ ) \
-  if ( expr_ )                          \
-    signal_ = 'x;                       \
-  if (1)
-`else
-`define ECE2300_XPROP( signal_, expr_ ) \
-  if (1)
-`endif
 
 `endif /* ECE2300_MISC */
 

@@ -23,8 +23,8 @@ module Subtractor_4b_RTL
   `ECE2300_UNUSED( in0 );
   `ECE2300_UNUSED( in1 );
   `ECE2300_UNUSED( bin );
-  `ECE2300_UNDRIVEN( bout );
-  `ECE2300_UNDRIVEN( diff );
+  `ECE2300_FLOATING( bout );
+  `ECE2300_FLOATING( diff );
 
 endmodule
 

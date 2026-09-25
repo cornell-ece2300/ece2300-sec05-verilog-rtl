@@ -50,7 +50,6 @@ def process_log( filename ):
 
   passed = None
   failed = None
-  timeout = False
 
   with open(filename) as f:
     for line in f:
@@ -60,12 +59,8 @@ def process_log( filename ):
 
       elif line.startswith("num_test_cases_failed"):
         failed = int(re.search(r"=\s*(\d+)", line).group(1))
-
-      elif line.startswith("TIMEOUT"):
-        print("timeout")
-        exit()
-
-  return passed, failed, timeout
+      
+  return passed, failed
 
 #-------------------------------------------------------------------------
 # Main
@@ -104,7 +99,7 @@ def main():
       print("\u200B")
 
     print("Summary")
-    print("-"*74)
+    print("="*74)
 
   # Display summary
 
@@ -121,11 +116,11 @@ def main():
       print(f"{testname:<40} {status} (log file not exist)")
       continue
 
-    passed, failed, timeout = process_log(filename)
+    passed, failed = process_log(filename)
     if passed is None or failed is None:
       any_failed = True
       status = f"\033[31mFAILED\033[0m"  # red
-      print(f"{testname:<40} {status} (log file invalid)")
+      print(f"{testname:<40} {status} ( ?/ ? test cases passed)")
       continue
 
     if failed == 0 and passed > 0:

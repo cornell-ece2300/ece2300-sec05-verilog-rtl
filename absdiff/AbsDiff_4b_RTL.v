@@ -6,7 +6,6 @@
 `define ABS_DIFF_4B_RTL_V
 
 `include "ece2300/ece2300-misc.v"
-
 `include "absdiff/GTComparator_4b_RTL.v"
 `include "absdiff/Mux2_4b_RTL.v"
 `include "absdiff/Subtractor_4b_RTL.v"
@@ -24,7 +23,7 @@ module AbsDiff_4b_RTL
 
   `ECE2300_UNUSED( in0 );
   `ECE2300_UNUSED( in1 );
-  `ECE2300_UNDRIVEN( diff );
+  `ECE2300_FLOATING( diff );
 
 endmodule
 

@@ -3,8 +3,6 @@
 //========================================================================
 
 `include "ece2300/ece2300-test.v"
-
-// ece2300-lint
 `include "absdiff/GTComparator_4b_GL.v"
 
 module Top();
@@ -13,7 +11,7 @@ module Top();
   // Setup
   //----------------------------------------------------------------------
 
-  CombinationalTestUtils t();
+  TestUtils t();
 
   //----------------------------------------------------------------------
   // Instantiate design under test

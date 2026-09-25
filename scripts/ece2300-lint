@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""
+Lint the Verilog files covered by a Verilog top or test file.
+
+Usage - how the Makefile invokes this script:
+
+    ece2300-lint --rulesets <top_dir>/scripts/lint/rulesets.yaml \
+        -I <top_dir> <test_file>
+
+What happens:
+
+  1. collect_files() walks `include`s to build the list of 
+  hardware files the top covers
+  2. rulesets.yaml says which rules apply to which file
+  3. verible-verilog-lint runs once per file, with that file's rules
+
+A file that is not listed in rulesets.yaml is skipped which is how system
+includes and untracked files don't have Verible linting
+"""
+
+import argparse
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import yaml
+
+from lint.collect_files import collect_files
+
+def find_verible() -> str:
+    exe = shutil.which("verible-verilog-lint")
+    if not exe:
+        sys.exit("Error: verible-verilog-lint not found on PATH.")
+    return exe
+
+def load_rulesets(path: Path):
+    """
+    Read rulesets.yaml and return (file -> ruleset name, ruleset name -> rules).
+    """
+    with open(path) as f:
+        config = yaml.safe_load(f)
+    return config.get("files") or {}, config.get("rulesets") or {}
+
+
+def lint_file(verible: str, path: Path, rules: list) -> bool:
+    """
+    Run verible on one file. Returns True if it was clean.
+
+    Verible exits 0 when clean and non-zero when it finds violations; its
+    output goes to stdout/stderr, so there is nothing to parse.
+    """
+    result = subprocess.run(
+        [verible, "--ruleset=none", "--rules=" + ",".join(rules), str(path)]
+    )
+    return result.returncode == 0
+
+
+def main(args_list=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("file", nargs="?", help="the *-test.v file to lint")
+    parser.add_argument(
+        "-r", "--rulesets", type=Path, metavar="PATH",
+        help="path to the ruleset YAML file",
+    )
+    parser.add_argument(
+        "-I", "--include_dir",
+        type=Path,
+        default=Path("."),
+        help="repository root and directory to search for `include files",
+    )
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="also report files that were skipped")
+    parser.add_argument("-l", "--list-rules", action="store_true",
+                        help="list every rule the linter knows about and exit")
+    args = parser.parse_args(args_list)
+
+    if not args.list_rules and args.rulesets is None:
+        parser.error("--rulesets is required when linting")
+
+    if args.rulesets is not None and not args.rulesets.is_file():
+        parser.error(f"rulesets file not found: {args.rulesets}")
+
+    verible = find_verible()
+
+    if args.list_rules:
+        subprocess.run([verible, "--help_rules=all"])
+        return 0
+
+    if not args.file:
+        parser.error("a test file is required (unless using -l/--list-rules)")
+
+    file_rulesets, rulesets = load_rulesets(args.rulesets)
+    repo_root = args.include_dir.resolve()
+    files = collect_files(Path(args.file), [args.include_dir])
+
+    everything_clean = True
+
+    for path in files:
+
+        try:
+            file_key = path.relative_to(repo_root).as_posix()
+        except ValueError:
+            if args.verbose:
+                print(f"skipping {path} (outside repository root)")
+            continue
+
+        ruleset_name = file_rulesets.get(file_key)
+
+        if ruleset_name is None:
+            if args.verbose:
+                print(f"skipping {file_key} (not listed in rulesets.yaml)")
+            continue
+
+        rules = rulesets.get(ruleset_name)
+        if rules is None:
+            sys.exit(
+                f"Error: file '{file_key}' maps to ruleset '{ruleset_name}', "
+                f"which is not defined in {args.rulesets.name}."
+            )
+
+        if args.verbose:
+            print(f"linting {file_key} as '{ruleset_name}'")
+
+        # Stop after a failure, matches Verilator
+        if not lint_file(verible, path, rules):
+            everything_clean = False
+            break
+
+    return 0 if everything_clean else 1
+
+if __name__ == "__main__":
+    sys.exit(main())

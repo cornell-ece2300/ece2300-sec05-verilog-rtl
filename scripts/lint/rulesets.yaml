@@ -1,0 +1,44 @@
+rulesets:
+  GL:
+    - forbid-special-blocks
+    - forbid-always-comb
+    - forbid-always-ff
+    - restrict-assign-rhs
+    - restrict-gate-primitives
+    - forbid-module-instantiation
+    - restrict-port-connections
+           
+  GL_Struct:
+    - forbid-special-blocks
+    - forbid-always-comb
+    - forbid-always-ff
+    - restrict-assign-rhs
+    - restrict-gate-primitives
+    - restrict-port-connections
+
+  RTL_No_Always:
+    - forbid-special-blocks
+    - forbid-always-comb
+    - forbid-always-ff
+    - forbid-module-instantiation
+    - forbid-gate-primitives
+
+files:
+  lab1/BinaryToBinCodedDec_GL.v:   GL
+  lab1/BinaryToSevenSegOpt_GL.v:   GL
+  lab1/BinaryToSevenSegUnopt_GL.v: GL
+  lab1/DisplayOpt_GL.v:            GL_Struct
+  lab1/DisplayUnopt_GL.v:          GL_Struct
+
+  lab2/FullAdder_GL.v:             GL
+  lab2/AdderRippleCarry_8b_GL.v:   GL_Struct
+  lab2/AdderRippleCarry_16b_GL.v:  GL_Struct
+  lab2/Mux2_1b_GL.v:               GL
+  lab2/Mux2_8b_GL.v:               GL_Struct
+  lab2/Mux2_16b_GL.v:              GL_Struct
+  lab2/AdderCarrySelect_16b_GL.v:  GL_Struct
+  lab2/Adder_16b_RTL.v:            RTL_No_Always
+  lab2/Multiplier_1x16b_GL.v:      GL
+  lab2/Multiplier_2x16b_GL.v:      GL_Struct
+  lab2/Multiplier_2x16b_RTL.v:     RTL_No_Always
+  lab2/Calculator_GL.v:            GL_Struct

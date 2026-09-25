@@ -6,8 +6,8 @@
 //------------------------------------------------------------------------
 // check
 //------------------------------------------------------------------------
-// We set the inputs, wait 8 tau, check the outputs, wait 2 tau. Each
-// check will take a total of 10 tau.
+// We wait 1 tau, set the inputs, wait 8 tau, check the outputs, wait 1
+// tau. Each check will take a total of 10 tau.
 
 task check
 (
@@ -17,6 +17,8 @@ task check
 );
   if ( !t.failed ) begin
     t.num_checks += 1;
+
+    #1;
 
     in0 = in0_;
     in1 = in1_;
@@ -28,7 +30,7 @@ task check
 
     `ECE2300_CHECK_EQ( gt, gt_ );
 
-    #2;
+    #1;
 
   end
 endtask

@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+#=========================================================================
+# ece2300-format [options] <file>
+#=========================================================================
+#
+# Pass 1: Lint with ECE 2300 prechecks + Verible rules.
+# Pass 2: Autoformat with Verible.
+# Overwrites the file in place.
+#
+# With no pass flags, both passes run. Use -1 and/or -2 to run
+# individual passes only.
+#
+# Author : Anthony Song
+# Last Maintained : Jun 30, 2026
+#
+
+import argparse
+import sys
+from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+FORMAT_DIR = SCRIPT_DIR / "format"
+
+# format_*.py and format_utils.py live under scripts/format/
+sys.path.insert(0, str(FORMAT_DIR))
+
+from format_utils import validate_file
+import format_general
+import format_lint
+
+TOOL_NAME = "ece2300-format"
+
+
+def main(argv=None):
+  ap = argparse.ArgumentParser(
+    description=(
+      "Format one Verilog/SystemVerilog file: run ECE 2300 prechecks and "
+      "Verible lint, then format with Verible."
+    ),
+  )
+  ap.add_argument(
+    "-1",
+    "--lint",
+    action="store_true",
+    help="Run pass 1 only: lint with Verible + ECE 2300 rules",
+  )
+  ap.add_argument(
+    "-2",
+    "--general-format",
+    action="store_true",
+    help="Run pass 2 only: autoformat with Verible",
+  )
+  ap.add_argument(
+    "file",
+    help="Verilog/SystemVerilog file to format (.v, .sv, or .svh)",
+  )
+  args = ap.parse_args(argv)
+
+  path = validate_file(args.file, TOOL_NAME)
+  if path is None:
+    return 1
+
+  # The commit-before-format check (format_utils.ensure_file_committed) is
+  # disabled for now, so students can format files with uncommitted changes.
+
+  selected = [args.lint, args.general_format]
+  run_all = not any(selected)
+  run_lint = run_all or args.lint
+  run_general = run_all or args.general_format
+
+  if run_lint:
+    rc = format_lint.run(path)
+    if rc != 0:
+      return rc
+
+  if run_general:
+    rc = format_general.run(path)
+    if rc != 0:
+      return rc
+
+  if run_general:
+    print(f"{TOOL_NAME}: formatted {path}")
+  else:
+    print(f"{TOOL_NAME}: lint passed {path}")
+
+  return 0
+
+
+if __name__ == "__main__":
+  sys.exit(main())

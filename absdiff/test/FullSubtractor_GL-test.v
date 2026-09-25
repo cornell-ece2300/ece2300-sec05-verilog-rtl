@@ -3,8 +3,6 @@
 //========================================================================
 
 `include "ece2300/ece2300-test.v"
-
-// ece2300-lint
 `include "absdiff/FullSubtractor_GL.v"
 
 module Top();
@@ -13,7 +11,7 @@ module Top();
   // Setup
   //----------------------------------------------------------------------
 
-  CombinationalTestUtils t();
+  TestUtils t();
 
   //----------------------------------------------------------------------
   // Instantiate design under test
@@ -37,8 +35,8 @@ module Top();
   //----------------------------------------------------------------------
   // check
   //----------------------------------------------------------------------
-  // We set the inputs, wait 8 tau, check the outputs, wait 2 tau. Each
-  // check will take a total of 10 tau.
+  // We wait 1 tau, set the inputs, wait 8 tau, check the outputs, wait 1
+  // tau. Each check will take a total of 10 tau.
 
   task check
   (
@@ -50,6 +48,8 @@ module Top();
   );
     if ( !t.failed ) begin
       t.num_checks += 1;
+
+      #1;
 
       in0 = in0_;
       in1 = in1_;
@@ -63,7 +63,7 @@ module Top();
       `ECE2300_CHECK_EQ( bout, bout_ );
       `ECE2300_CHECK_EQ( diff, diff_ );
 
-      #2;
+      #1;
 
     end
   endtask
