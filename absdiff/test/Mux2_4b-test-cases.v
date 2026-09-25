@@ -119,10 +119,10 @@ task test_case_4_xprop();
   check( 'x, 'x, 'x, 'x );
 
   `ifdef USE_RTL_XPROP_TESTS
-  check( '0, '0, 'x, 'x );
+  check( '0, '0, 'x, '0 );
   check( '0, '1, 'x, 'x );
   check( '1, '0, 'x, 'x );
-  check( '1, '1, 'x, 'x );
+  check( '1, '1, 'x, '1 );
 
   check( '0, 'x, '0, '0 );
   check( '0, 'x, '1, 'x );

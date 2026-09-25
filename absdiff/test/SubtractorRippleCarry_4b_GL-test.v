@@ -19,16 +19,12 @@ module Top();
 
   logic [3:0] in0;
   logic [3:0] in1;
-  logic       bin;
-  logic       bout;
   logic [3:0] diff;
 
   SubtractorRippleCarry_4b_GL dut
   (
     .in0  (in0),
     .in1  (in1),
-    .bin  (bin),
-    .bout (bout),
     .diff (diff)
   );
 

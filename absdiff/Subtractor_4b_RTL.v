@@ -11,8 +11,6 @@ module Subtractor_4b_RTL
 (
   (* keep=1 *) input  logic [3:0] in0,
   (* keep=1 *) input  logic [3:0] in1,
-  (* keep=1 *) input  logic       bin,
-  (* keep=1 *) output logic       bout,
   (* keep=1 *) output logic [3:0] diff
 );
 
@@ -22,8 +20,6 @@ module Subtractor_4b_RTL
 
   `ECE2300_UNUSED( in0 );
   `ECE2300_UNUSED( in1 );
-  `ECE2300_UNUSED( bin );
-  `ECE2300_FLOATING( bout );
   `ECE2300_FLOATING( diff );
 
 endmodule

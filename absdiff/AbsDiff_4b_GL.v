@@ -45,20 +45,12 @@ module AbsDiff_4b_GL
     .out (mux1_out)
   );
 
-  wire bout;
-
   SubtractorRippleCarry_4b_GL sub
   (
     .in0  (mux0_out),
     .in1  (mux1_out),
-    .bin  (1'b0),
-    .bout (bout),
     .diff (diff)
   );
-
-  // Mark unused signals to avoid linting errors
-
-  `ECE2300_UNUSED( bout );
 
 endmodule
 
