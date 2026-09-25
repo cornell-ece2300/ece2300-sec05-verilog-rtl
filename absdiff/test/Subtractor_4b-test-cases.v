@@ -239,9 +239,9 @@ task test_case_8_random();
     rand_in1 = 4'($urandom(t.seed));
     rand_bin = 1'($urandom(t.seed));
 
-    // Determine correct answer, we need to zero-extend rand_bin
+    // Determine correct answer
 
-    rand_result = rand_in0 - rand_in1 - {3'b0, rand_bin};
+    rand_result = rand_in0 - rand_in1 - rand_bin;
     rand_bout = rand_result[4];
     rand_diff = rand_result[3:0];
 

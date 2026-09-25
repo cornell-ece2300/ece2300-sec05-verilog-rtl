@@ -29,6 +29,5 @@ absdiff_tests = \
   AbsDiff_4b_RTL-test.v \
 
 absdiff_sims = \
-  mux-rtl-sim.v \
 
 $(eval $(call check_part,absdiff))
